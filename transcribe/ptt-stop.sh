@@ -33,7 +33,7 @@ fi
 
 # Transcribe: -nt removes timestamps, -np removes progress
 # stderr has all the model loading info, stdout has the text
-RAW=$("$BIN" -m "$MODEL" -f "$TMP" -nt -np 2>/dev/null)
+RAW=$("$BIN" -m "$MODEL" -f "$TMP" -nt -np -sns 2>/dev/null)
 
 # Clean up: trim whitespace, collapse multiple spaces
 TEXT=$(echo "$RAW" | tr '\n' ' ' | sed 's/  */ /g; s/^ *//; s/ *$//')

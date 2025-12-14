@@ -26,9 +26,23 @@ sudo apt install -y \
 
 ### 1. Build whisper.cpp
 
+**CPU-only (default):**
+
 ```bash
 cd vendor/whisper.cpp
 cmake -B build
+cmake --build build -j$(nproc)
+```
+
+**With NVIDIA GPU acceleration (recommended):**
+
+```bash
+# Install CUDA toolkit first
+sudo apt install nvidia-cuda-toolkit
+
+# Build with CUDA support
+cd vendor/whisper.cpp
+cmake -B build -DGGML_CUDA=ON
 cmake --build build -j$(nproc)
 ```
 
@@ -36,6 +50,9 @@ Verify:
 
 ```bash
 ./build/bin/whisper-cli --help
+
+# Check GPU is detected (should show your GPU name)
+./build/bin/whisper-cli -m models/ggml-base.en.bin -f /tmp/test.wav 2>&1 | grep -i cuda
 ```
 
 ### 2. Download a model
