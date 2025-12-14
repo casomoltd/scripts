@@ -75,7 +75,21 @@ Start the daemon:
 xbindkeys
 ```
 
-Add `xbindkeys` to your session startup to persist across reboots.
+### 4. Persist across reboots
+
+Create `~/.config/autostart/xbindkeys.desktop`:
+
+```ini
+[Desktop Entry]
+Type=Application
+Name=xbindkeys
+Exec=xbindkeys
+Hidden=false
+NoDisplay=true
+X-GNOME-Autostart-enabled=true
+```
+
+Note: `Ctrl+Space` may conflict with input methods (IBus/Fcitx) or IDE autocomplete. Rebind those if needed.
 
 ## Usage
 
