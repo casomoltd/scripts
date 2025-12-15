@@ -74,16 +74,16 @@ ls -lh ggml-base.en.bin
 
 ### 3. Configure hotkey
 
-Create `~/.xbindkeysrc`:
+Copy the template to your home directory:
 
+```bash
+cp transcribe/xbindkeysrc.template ~/.xbindkeysrc
 ```
-# PTT START
-"bash /full/path/to/scripts/transcribe/ptt-start.sh"
-  Control+space
 
-# PTT STOP
-"bash /full/path/to/scripts/transcribe/ptt-stop.sh"
-  release+Control+space
+Disable key repeat for Menu key (prevents repeated triggers):
+
+```bash
+xset -r 135
 ```
 
 Start the daemon:
@@ -100,18 +100,16 @@ Create `~/.config/autostart/xbindkeys.desktop`:
 [Desktop Entry]
 Type=Application
 Name=xbindkeys
-Exec=xbindkeys
+Exec=bash -c "xset -r 135; xbindkeys"
 Hidden=false
 NoDisplay=true
 X-GNOME-Autostart-enabled=true
 ```
 
-Note: `Ctrl+Space` may conflict with input methods (IBus/Fcitx) or IDE autocomplete. Rebind those if needed.
-
 ## Usage
 
 1. Focus target window (terminal, editor, etc.)
-2. Hold `Ctrl+Space` and speak
+2. Hold `Control+Menu` and speak
 3. Release to transcribe and inject text
 
 ## Troubleshooting
@@ -136,7 +134,7 @@ aplay /tmp/whisper_ptt.wav
 pgrep xbindkeys
 
 # Test in foreground (shows trigger events)
-xbindkeys -n
+xbindkeys -k
 
 # Kill conflicting daemons
 pkill sxhkd
