@@ -1,45 +1,59 @@
 #!/usr/bin/env bash
+# ptt-stop.sh - Stop recording and transcribe
+#
+# Called on hotkey release. Stops arecord, acquires lock, transcribes audio
+# with whisper.cpp, and types the result into the focused window.
 
-# Set to /tmp/whisper_ptt.log for debugging
-LOG=/dev/null
-TMP=/tmp/whisper_ptt.wav
-PIDFILE=/tmp/whisper_ptt.pid
+source "$(dirname "${BASH_SOURCE[0]}")/env.sh"
 
-# Not recording? Skip.
-if [ ! -f "$PIDFILE" ]; then
-  echo "$(date '+%H:%M:%S.%3N') STOP skipped" >> "$LOG"
-  exit 0
+# Stop any recording (harmless if not running)
+pkill -f "arecord.*whisper_ptt.wav" 2>/dev/null
+
+# Wait for arecord to finalize WAV header
+sleep 0.2
+
+# Acquire lock (waits if ptt-start is still cleaning up)
+if ! acquire_lock; then
+  acquire_lock_wait 2 || {
+    log "STOP skipped (lock timeout)"
+    exit 0
+  }
 fi
 
-echo "$(date '+%H:%M:%S.%3N') STOP" >> "$LOG"
+DURATION=$(get_duration)
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-BIN="$SCRIPT_DIR/../vendor/whisper.cpp/build/bin/whisper-cli"
-MODEL="$SCRIPT_DIR/../vendor/whisper.cpp/models/ggml-base.en.bin"
-
-# Stop recording
-PID=$(cat "$PIDFILE")
-rm -f "$PIDFILE"
-
-if kill -0 "$PID" 2>/dev/null; then
-  kill -SIGINT "$PID" 2>/dev/null
-  # Wait for arecord to finalize WAV header
-  for i in {1..20}; do
-    kill -0 "$PID" 2>/dev/null || break
-    sleep 0.1
-  done
-fi
-
-# Sanity check
+# Check for valid audio
 if [ ! -s "$TMP" ]; then
+  log "STOP duration=${DURATION}s (no audio)"
   exit 0
 fi
 
-# Transcribe (keep timestamps to get [BLANK_AUDIO] token, then strip all [...])
-RAW=$("$BIN" -m "$MODEL" -f "$TMP" -np 2>/dev/null)
+SIZE=$(du -h "$TMP" | cut -f1)
+log "STOP duration=${DURATION}s size=${SIZE} mem=$(get_mem_avail) gpu=$(get_gpu_mem)"
+
+# Transcribe with timeout
+WHISPER_START=$(date +%s.%N)
+RAW=$(timeout "$WHISPER_TIMEOUT" "$WHISPER_BIN" \
+  -m "$WHISPER_MODEL" -f "$TMP" -np 2>/dev/null)
+WHISPER_EXIT=$?
+WHISPER_TIME=$(echo "$(date +%s.%N) - $WHISPER_START" | bc | xargs printf "%.1f")
+
+if [ $WHISPER_EXIT -eq 124 ]; then
+  log "WHISPER timeout after ${WHISPER_TIMEOUT}s"
+  exit 1
+elif [ $WHISPER_EXIT -ne 0 ]; then
+  log "WHISPER exit=${WHISPER_EXIT} time=${WHISPER_TIME}s (failed)"
+  exit 1
+fi
+
+log "WHISPER exit=0 time=${WHISPER_TIME}s"
+
+# Strip timestamp brackets and clean up whitespace
 TEXT=$(echo "$RAW" | sed 's/\[[^]]*\]//g' | xargs)
 
-# Type the text
 if [ -n "$TEXT" ]; then
   xdotool type --delay 1 --clearmodifiers "$TEXT "
+  log "TYPED chars=${#TEXT}"
+else
+  log "TYPED chars=0 (empty)"
 fi
