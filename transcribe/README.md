@@ -23,14 +23,17 @@ sudo apt install nvidia-cuda-toolkit
 cmake -B build -DGGML_CUDA=ON && cmake --build build -j$(nproc)
 ```
 
-### 2. Download model
+### 2. Download models
 
 ```bash
 cd vendor/whisper.cpp/models
 ./download-ggml-model.sh base.en
+./download-vad-model.sh silero-v6.2.0
 ```
 
-Options: `tiny.en` (fast) → `base.en` → `small.en` → `medium.en` → `large` (accurate)
+Whisper options: `tiny.en` (fast) → `base.en` → `small.en` → `medium.en` → `large` (accurate)
+
+VAD (Voice Activity Detection) filters trailing silence to prevent hallucinations like "you" or "Thank you for watching".
 
 ### 3. Configure hotkey
 

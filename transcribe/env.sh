@@ -20,6 +20,7 @@ WHISPER_TIMEOUT=30
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[1]}")" && pwd)"
 WHISPER_BIN="$SCRIPT_DIR/../vendor/whisper.cpp/build/bin/whisper-cli"
 WHISPER_MODEL="$SCRIPT_DIR/../vendor/whisper.cpp/models/ggml-base.en.bin"
+VAD_MODEL="$SCRIPT_DIR/../vendor/whisper.cpp/models/ggml-silero-v6.2.0.bin"
 
 # ------------------------------------------------------------------------------
 # Functions

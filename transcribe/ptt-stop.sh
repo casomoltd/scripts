@@ -41,10 +41,11 @@ if [ "$SIZE_BYTES" -lt 1000 ]; then
 fi
 log "STOP duration=${DURATION}s size=${SIZE} mem=$(get_mem_avail) gpu=$(get_gpu_mem)"
 
-# Transcribe with timeout
+# Transcribe with timeout (VAD filters trailing silence to prevent hallucinations)
 WHISPER_START=$(date +%s.%N)
 RAW=$(timeout "$WHISPER_TIMEOUT" "$WHISPER_BIN" \
-  -m "$WHISPER_MODEL" -f "$TMP" -np -nt -sns 2>/dev/null)
+  -m "$WHISPER_MODEL" -f "$TMP" -np -nt -sns \
+  --vad -vm "$VAD_MODEL" 2>/dev/null)
 WHISPER_EXIT=$?
 WHISPER_TIME=$(echo "$(date +%s.%N) - $WHISPER_START" | bc | xargs printf "%.1f")
 
