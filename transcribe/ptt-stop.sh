@@ -44,7 +44,7 @@ log "STOP duration=${DURATION}s size=${SIZE} mem=$(get_mem_avail) gpu=$(get_gpu_
 # Transcribe with timeout
 WHISPER_START=$(date +%s.%N)
 RAW=$(timeout "$WHISPER_TIMEOUT" "$WHISPER_BIN" \
-  -m "$WHISPER_MODEL" -f "$TMP" -np 2>/dev/null)
+  -m "$WHISPER_MODEL" -f "$TMP" -np -nt -sns 2>/dev/null)
 WHISPER_EXIT=$?
 WHISPER_TIME=$(echo "$(date +%s.%N) - $WHISPER_START" | bc | xargs printf "%.1f")
 
@@ -58,11 +58,16 @@ fi
 
 log "WHISPER exit=0 time=${WHISPER_TIME}s"
 
-# Strip timestamp brackets and clean up whitespace
-TEXT=$(echo "$RAW" | sed 's/\[[^]]*\]//g' | xargs)
+# Clean up whitespace (timestamps/artifacts already handled by whisper flags)
+TEXT=$(echo "$RAW" \
+  | tr '\n\r' ' ' \
+  | tr -s ' ' \
+  | sed 's/^ *//; s/ *$//')
 
 if [ -n "$TEXT" ]; then
-  xdotool type --delay 1 --clearmodifiers "$TEXT "
+  # Write to temp file for xdotool (handles special chars like apostrophes)
+  printf '%s ' "$TEXT" > /tmp/whisper_text.txt
+  xdotool type --clearmodifiers --delay 1 --file /tmp/whisper_text.txt
   log "TYPED chars=${#TEXT}"
 else
   log "TYPED chars=0 (empty)"
