@@ -28,6 +28,9 @@ WHISPER_MODEL="$SCRIPT_DIR/../vendor/whisper.cpp/models/ggml-base.en.bin"
 # Log message to systemd journal with whisper-ptt tag
 log() { logger -t whisper-ptt "$1"; }
 
+# Log error message (appears as priority err in journalctl)
+log_err() { logger -p user.err -t whisper-ptt "$1"; }
+
 # Acquire exclusive lock (non-blocking). Returns 1 if already locked.
 acquire_lock() {
   exec 9>"$LOCKFILE"
