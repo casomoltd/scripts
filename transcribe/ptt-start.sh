@@ -8,7 +8,7 @@
 source "$(dirname "${BASH_SOURCE[0]}")/env.sh"
 
 if ! acquire_lock; then
-  log "START skipped (operation in progress)"
+  log_info "START skipped (operation in progress)"
   exit 0
 fi
 
@@ -22,7 +22,7 @@ start_timer
 arecord -q -f S16_LE -r 16000 -c 1 -t wav -d 60 "$TMP" &
 ARECORD_PID=$!
 
-log "START pid=$ARECORD_PID"
+log_info "START pid=$ARECORD_PID"
 
 # Wait for arecord - keeps lock held until ptt-stop kills us
 wait $ARECORD_PID

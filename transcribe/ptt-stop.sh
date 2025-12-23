@@ -15,7 +15,7 @@ sleep 0.2
 # Acquire lock (waits if ptt-start is still cleaning up)
 if ! acquire_lock; then
   acquire_lock_wait 2 || {
-    log "STOP skipped (lock timeout)"
+    log_info "STOP skipped (lock timeout)"
     exit 0
   }
 fi
@@ -24,7 +24,7 @@ DURATION=$(get_duration)
 
 # Check for valid audio
 if [ ! -s "$TMP" ]; then
-  log "STOP duration=${DURATION}s (no audio file)"
+  log_info "STOP duration=${DURATION}s (no audio file)"
   exit 0
 fi
 
@@ -35,11 +35,11 @@ SIZE=$(du -h "$TMP" | cut -f1)
 # WAV header is 44 bytes; at 16kHz 16-bit mono, meaningful audio needs more
 # Anything under ~1000 bytes is basically empty (header + minimal data)
 if [ "$SIZE_BYTES" -lt 1000 ]; then
-  log_err "STOP duration=${DURATION}s size=${SIZE_BYTES}B (recording empty - no audio captured)"
+  log_error "STOP dur=${DURATION}s size=${SIZE_BYTES}B (empty recording)"
   rm -f "$TMP"
   exit 0
 fi
-log "STOP duration=${DURATION}s size=${SIZE} mem=$(get_mem_avail) gpu=$(get_gpu_mem)"
+log_info "STOP dur=${DURATION}s size=${SIZE} mem=$(get_mem_avail) gpu=$(get_gpu_mem)"
 
 # Transcribe with timeout (VAD filters trailing silence to prevent hallucinations)
 WHISPER_START=$(date +%s.%N)
@@ -50,14 +50,14 @@ WHISPER_EXIT=$?
 WHISPER_TIME=$(echo "$(date +%s.%N) - $WHISPER_START" | bc | xargs printf "%.1f")
 
 if [ $WHISPER_EXIT -eq 124 ]; then
-  log "WHISPER timeout after ${WHISPER_TIMEOUT}s"
+  log_error "WHISPER timeout after ${WHISPER_TIMEOUT}s"
   exit 1
 elif [ $WHISPER_EXIT -ne 0 ]; then
-  log "WHISPER exit=${WHISPER_EXIT} time=${WHISPER_TIME}s (failed)"
+  log_error "WHISPER exit=${WHISPER_EXIT} time=${WHISPER_TIME}s (failed)"
   exit 1
 fi
 
-log "WHISPER exit=0 time=${WHISPER_TIME}s"
+log_info "WHISPER exit=0 time=${WHISPER_TIME}s"
 
 # Clean up text: strip control chars (Ctrl+C/D/Z, ESC, etc.) that whisper may
 # hallucinate and xdotool would send as keypresses, killing the terminal session
@@ -69,9 +69,9 @@ TEXT=$(echo "$RAW" \
 
 if [ -n "$TEXT" ]; then
   # Write to temp file for xdotool (handles special chars like apostrophes)
-  printf '%s ' "$TEXT" > /tmp/whisper_text.txt
-  xdotool type --clearmodifiers --delay 1 --file /tmp/whisper_text.txt
-  log "TYPED chars=${#TEXT}"
+  printf '%s ' "$TEXT" > "$TMP_TEXT"
+  xdotool type --clearmodifiers --delay "$XDOTOOL_DELAY" --file "$TMP_TEXT"
+  log_info "TYPED chars=${#TEXT}"
 else
-  log "TYPED chars=0 (empty)"
+  log_info "TYPED chars=0 (empty)"
 fi
