@@ -59,9 +59,11 @@ fi
 
 log "WHISPER exit=0 time=${WHISPER_TIME}s"
 
-# Clean up whitespace (timestamps/artifacts already handled by whisper flags)
+# Clean up text: strip control chars (Ctrl+C/D/Z, ESC, etc.) that whisper may
+# hallucinate and xdotool would send as keypresses, killing the terminal session
 TEXT=$(echo "$RAW" \
-  | tr '\n\r' ' ' \
+  | tr '\n\r\t' ' ' \
+  | tr -d '[:cntrl:]' \
   | tr -s ' ' \
   | sed 's/^ *//; s/ *$//')
 
