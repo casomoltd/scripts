@@ -1,0 +1,6 @@
+# Claude Code Instructions
+
+## Git Commits
+
+Do not include Claude/Anthropic attribution in commit messages (no "Generated with
+Claude Code" or "Co-Authored-By: Claude" lines).
