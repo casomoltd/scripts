@@ -39,29 +39,35 @@ VAD (Voice Activity Detection) filters trailing silence to prevent hallucination
 
 ```bash
 cp transcribe/xbindkeysrc.template ~/.xbindkeysrc
-xset -r 135        # Disable key repeat for Menu key
 xbindkeys          # Start daemon
 ```
 
-### 4. Autostart
+### 4. Disable key repeat for Menu key
 
-xbindkeys auto-starts via `/etc/xdg/autostart/xbindkeys.desktop`.
+The Menu key (keycode 135) must have auto-repeat disabled to prevent rapid-fire
+hotkey events when held. Two methods ensure this persists:
 
-For the key repeat fix, run from `transcribe/` directory:
-
+**User-level (X session start):**
 ```bash
-mkdir -p ~/.config/autostart
-cat > ~/.config/autostart/ptt-setup.desktop << EOF
-[Desktop Entry]
-Version=1.0
-Name=ptt-setup
-Exec=$(pwd)/ptt-setup.sh
-Terminal=false
-Type=Application
+cat >> ~/.xsessionrc << 'EOF'
+# Disable key repeat for Menu key (PTT hotkey)
+xset -r 135
 EOF
 ```
 
-Note: `~/.xprofile` doesn't work reliably on modern GNOME/systemd.
+**System-level (keyboard hotplug):**
+```bash
+sudo tee /etc/udev/rules.d/99-ptt-keyboard.rules << 'EOF'
+ACTION=="add", SUBSYSTEM=="input", ENV{ID_INPUT_KEYBOARD}=="1", RUN+="/usr/bin/xset -r 135"
+EOF
+sudo udevadm control --reload-rules
+```
+
+The udev rule handles keyboard replug; xsessionrc handles login/unlock.
+
+### 5. Autostart
+
+xbindkeys auto-starts via `/etc/xdg/autostart/xbindkeys.desktop`.
 
 ## Usage
 
@@ -90,7 +96,7 @@ pkill sxhkd        # Kill conflicting daemons
 **Empty recordings (rapid start/stop in logs):**
 ```bash
 journalctl -t whisper-ptt -p err --since "5 min ago"
-xset -r 135        # Fix: disable key repeat
+xset -r 135        # Immediate fix; see step 4 for persistent setup
 ```
 
 ## Logs
