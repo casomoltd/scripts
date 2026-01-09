@@ -93,6 +93,13 @@ xbindkeys -k       # Test key detection
 pkill sxhkd        # Kill conflicting daemons
 ```
 
+**Hotkey stopped working after keyboard replug:**
+`xbindkeys` grabs keys on the original keyboard device. After replugging, it holds stale references. Run the setup script to kill stale processes and restart:
+
+```bash
+./transcribe/ptt-setup.sh
+```
+
 **Empty recordings (rapid start/stop in logs):**
 ```bash
 journalctl -t whisper-ptt -p err --since "5 min ago"
