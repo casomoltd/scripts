@@ -1,6 +1,12 @@
 #!/bin/bash
 # ptt-setup.sh - Setup/reset PTT after login or keyboard replug
 # Clears stale processes and restarts xbindkeys to grab the current keyboard
+#
+# LIMITATION: This script must be run manually after keyboard replug.
+# udev cannot automate this because it runs in kernel space without access
+# to the user's X session (no DISPLAY). xbindkeys and xset require X.
+# The udev rule at /etc/udev/rules.d/99-ptt-keyboard.rules only handles
+# xset -r 135 which sometimes works, but xbindkeys restart requires userspace.
 
 source "$(dirname "${BASH_SOURCE[0]}")/env.sh"
 
